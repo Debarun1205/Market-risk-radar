@@ -1,0 +1,18 @@
+:root {
+  --bg: #0b0e14;
+  --panel: #10141c;
+  --panel-alt: #131826;
+  --border: #232838;
+  --border-soft: #1a1f2c;
+  --text: #e8eaed;
+  --text-dim: #8890a2;
+  --text-faint: #4b5163;
+  --amber: #e8a33d;
+  --cyan: #4fd1c5;
+  --rose: #e0665a;
+  --violet: #9b8fe0;
+  --green: #59c97a;
+  --blue: #5b8def;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Consolas, monospace;
+  --font-sans: "Inter", -apple-system, "Segoe UI", sans-serif;
+}
