@@ -43,8 +43,9 @@ async function callGroq(prompt: string, apiKey: string): Promise<string> {
     body: JSON.stringify({
       model: "openai/gpt-oss-20b",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 220,
+      max_completion_tokens: 600,
       temperature: 0.6,
+      reasoning_effort: "low",
     }),
   });
   if (!res.ok) {
@@ -53,13 +54,16 @@ async function callGroq(prompt: string, apiKey: string): Promise<string> {
   }
   const data = await res.json();
   const text = data?.choices?.[0]?.message?.content;
-  if (!text) throw new Error("Groq response missing content");
+  if (!text) {
+    console.error("Groq returned no content, raw response:", JSON.stringify(data));
+    throw new Error("Groq response missing content");
+  }
   return text.trim();
 }
 
 async function callGemini(prompt: string, apiKey: string): Promise<string> {
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
