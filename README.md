@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Market Risk Radar
 
 A quant dashboard combining a global company map, a correlation heatmap, a
@@ -125,3 +126,6 @@ This deploys cleanly to **Vercel**:
   strict network rules, test this first — the fallback view is there for
   exactly this case.
 - No persistence layer yet — selection state resets on page reload.
+=======
+# Market-risk-radar
+>>>>>>> 73fe2b83600248c4d61c135b1a792b13d0e58f9d
