@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { companies, byTicker, sectorColor } from "@/lib/companies";
+import { byTicker, COMPARE_COLORS, companies } from "@/lib/companies";
 import { buildRadarMap, radarFactors } from "@/lib/radar";
+import GlossaryTooltip from "./GlossaryTooltip";
 
 interface Props {
   selected: string[];
@@ -24,13 +25,19 @@ export default function FactorRadar({ selected, onRemove }: Props) {
 
   return (
     <div>
+      <p className="text-[12.5px] text-text-dim leading-relaxed mb-3 flex items-start gap-1.5">
+        Six simple business traits per company, scored 0–100 so shapes are easy to compare at a
+        glance. A bigger shape generally means a stronger overall profile.
+        <GlossaryTooltip text="These are simplified fundamentals: how profitable the company is, how fast it's growing, how easily it can pay short-term bills (liquidity), how much debt it carries (leverage, inverted so higher is better), how cheap or expensive it is (valuation), and recent price trend (momentum)." />
+      </p>
+
       <div className="flex flex-wrap gap-2 mb-1.5 min-h-[30px]">
         {selected.length === 0 ? (
           <span className="font-mono text-[11.5px] text-text-faint">
-            Click a pin on the map above to add a company.
+            Search and add a company above, or click a pin on the map.
           </span>
         ) : (
-          selected.map((t) => (
+          selected.map((t, i) => (
             <button
               key={t}
               onClick={() => onRemove(t)}
@@ -38,7 +45,7 @@ export default function FactorRadar({ selected, onRemove }: Props) {
             >
               <span
                 className="w-2 h-2 rounded-full"
-                style={{ background: sectorColor[byTicker[t].sector] }}
+                style={{ background: COMPARE_COLORS[i % COMPARE_COLORS.length] }}
               />
               {t}
               <span className="text-text-faint ml-0.5">×</span>
@@ -80,23 +87,24 @@ export default function FactorRadar({ selected, onRemove }: Props) {
             );
           })}
 
-          {selected.map((t) => {
+          {selected.map((t, i) => {
             const company = byTicker[t];
+            if (!company) return null;
             const vals = radarMap[t];
-            const color = sectorColor[company.sector];
-            const pts = vals.map((v, i) => pointFor(i, v).join(",")).join(" ");
+            const color = COMPARE_COLORS[i % COMPARE_COLORS.length];
+            const pts = vals.map((v, fi) => pointFor(fi, v).join(",")).join(" ");
             return (
               <g key={t}>
                 <polygon
                   points={pts}
                   style={{ stroke: color, fill: color, fillOpacity: 0.14, strokeWidth: 1.6 }}
                 />
-                {vals.map((v, i) => {
-                  const [x, y] = pointFor(i, v);
+                {vals.map((v, fi) => {
+                  const [x, y] = pointFor(fi, v);
                   return (
-                    <circle key={i} cx={x} cy={y} r={3} fill={color}>
+                    <circle key={fi} cx={x} cy={y} r={3} fill={color}>
                       <title>
-                        {t} {radarFactors[i]}: {v}
+                        {t} {radarFactors[fi]}: {v}
                       </title>
                     </circle>
                   );

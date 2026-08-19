@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import * as topojson from "topojson-client";
-import { companies, sectorColor, Company } from "@/lib/companies";
+import { companies, sectorColor, COMPARE_COLORS, Company } from "@/lib/companies";
 
 interface Props {
   selected: string[];
@@ -13,24 +13,31 @@ interface Props {
 
 const WIDTH = 900;
 const HEIGHT = 460;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 12;
 
 export default function WorldMap({ selected, onToggle, onHover }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const zoomGroupRef = useRef<SVGGElement | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
-  // Refs so the D3 event handlers (bound once) always see the latest props.
+  const zoomBehaviorRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
+
   const selectedRef = useRef(selected);
   const onToggleRef = useRef(onToggle);
   selectedRef.current = selected;
   onToggleRef.current = onToggle;
 
-  // Build the map once on mount.
+  const [zoomLevel, setZoomLevel] = useState(1);
+
   useEffect(() => {
     let cancelled = false;
 
     async function build() {
       const svg = d3.select(svgRef.current).attr("viewBox", `0 0 ${WIDTH} ${HEIGHT}`);
       svg.selectAll("*").remove();
-      const g = svg.append("g");
+
+      const zoomGroup = svg.append("g").attr("class", "zoom-group");
+      zoomGroupRef.current = zoomGroup.node();
 
       let world: any = null;
       try {
@@ -52,7 +59,8 @@ export default function WorldMap({ selected, onToggle, onHover }: Props) {
       const path = d3.geoPath(projection as any);
 
       if (world) {
-        g.selectAll("path.country")
+        zoomGroup
+          .selectAll("path.country")
           .data((world as any).features)
           .join("path")
           .attr("class", "country")
@@ -61,7 +69,8 @@ export default function WorldMap({ selected, onToggle, onHover }: Props) {
           .attr("stroke", "#232838")
           .attr("stroke-width", 0.6);
       } else {
-        g.append("text")
+        zoomGroup
+          .append("text")
           .attr("x", WIDTH / 2)
           .attr("y", 24)
           .attr("text-anchor", "middle")
@@ -72,9 +81,9 @@ export default function WorldMap({ selected, onToggle, onHover }: Props) {
       }
 
       const capExtent = d3.extent(companies, (d) => d.cap) as [number, number];
-      const rScale = d3.scaleSqrt().domain(capExtent).range([4, 12]);
+      const rScale = d3.scaleSqrt().domain(capExtent).range([2.6, 9]);
 
-      const pins = g
+      const pins = zoomGroup
         .selectAll<SVGGElement, Company>("g.pin")
         .data(companies)
         .join("g")
@@ -88,11 +97,12 @@ export default function WorldMap({ selected, onToggle, onHover }: Props) {
       pins
         .append("circle")
         .attr("class", "pin-ring")
-        .attr("r", (d) => rScale(d.cap) + 4)
+        .attr("r", (d) => rScale(d.cap) + 3.5)
         .style("fill", "none")
-        .style("stroke-width", 2)
-        .style("stroke", (d) => sectorColor[d.sector])
-        .style("opacity", (d) => (selectedRef.current.includes(d.t) ? 1 : 0));
+        .style("stroke-width", 1.8)
+        .style("stroke", () => "#4FD1C5")
+        .style("opacity", 0)
+        .style("vector-effect", "non-scaling-stroke");
 
       pins
         .append("circle")
@@ -100,22 +110,23 @@ export default function WorldMap({ selected, onToggle, onHover }: Props) {
         .attr("r", (d) => rScale(d.cap))
         .style("fill", (d) => sectorColor[d.sector])
         .style("stroke", "#0B0E14")
-        .style("stroke-width", 1.4)
-        .style("opacity", 0.88);
+        .style("stroke-width", 1)
+        .style("vector-effect", "non-scaling-stroke")
+        .style("opacity", 0.85);
 
       pins
         .append("text")
         .attr("class", "pin-label")
         .text((d) => d.t)
         .attr("x", 0)
-        .attr("y", (d) => -(rScale(d.cap) + 8))
+        .attr("y", (d) => -(rScale(d.cap) + 6))
         .attr("text-anchor", "middle")
         .attr("font-family", "var(--font-mono)")
-        .attr("font-size", 9)
+        .attr("font-size", 8)
         .attr("font-weight", 600)
         .attr("fill", "#E8EAED")
         .style("pointer-events", "none")
-        .style("opacity", (d) => (selectedRef.current.includes(d.t) ? 1 : 0));
+        .style("opacity", 0);
 
       pins
         .on("mousemove", (event: MouseEvent, d) => {
@@ -133,6 +144,50 @@ export default function WorldMap({ selected, onToggle, onHover }: Props) {
           onHover(null);
         })
         .on("click", (_event, d) => onToggleRef.current(d.t));
+
+      applySelectionStyles();
+
+      // ---- Zoom / pan behavior ----
+      const zoom = d3
+        .zoom<SVGSVGElement, unknown>()
+        .scaleExtent([MIN_ZOOM, MAX_ZOOM])
+        .translateExtent([
+          [-WIDTH * 0.3, -HEIGHT * 0.3],
+          [WIDTH * 1.3, HEIGHT * 1.3],
+        ])
+        .on("zoom", (event) => {
+          const { transform } = event;
+          zoomGroup.attr("transform", transform.toString());
+          setZoomLevel(transform.k);
+          // Keep pin dots a near-constant screen size, and reveal labels once zoomed in.
+          zoomGroup
+            .selectAll<SVGGElement, Company>("g.pin")
+            .attr("transform", (d) => {
+              const p = projection([d.lon, d.lat]);
+              return p ? `translate(${p[0]},${p[1]})` : "translate(-100,-100)";
+            });
+          zoomGroup.selectAll(".pin-label").style("opacity", transform.k > 3 ? 1 : 0);
+        });
+
+      zoomBehaviorRef.current = zoom;
+      if (svgRef.current) {
+        d3.select<SVGSVGElement, unknown>(svgRef.current).call(zoom);
+      }
+    }
+
+    function applySelectionStyles() {
+      const svg = d3.select(svgRef.current);
+      svg
+        .selectAll<SVGGElement, Company>("g.pin")
+        .select(".pin-ring")
+        .style("opacity", (d) => {
+          const idx = selectedRef.current.indexOf(d.t);
+          return idx >= 0 ? 1 : 0;
+        })
+        .style("stroke", (d) => {
+          const idx = selectedRef.current.indexOf(d.t);
+          return idx >= 0 ? COMPARE_COLORS[idx % COMPARE_COLORS.length] : "#4FD1C5";
+        });
     }
 
     build();
@@ -142,24 +197,67 @@ export default function WorldMap({ selected, onToggle, onHover }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Keep ring/label visibility in sync with selection without rebuilding the map.
+  // Keep ring visibility/color in sync with selection without rebuilding the map.
   useEffect(() => {
     const svg = d3.select(svgRef.current);
     svg
       .selectAll<SVGGElement, Company>("g.pin")
       .select(".pin-ring")
-      .style("opacity", (d) => (selected.includes(d.t) ? 1 : 0));
-    svg
-      .selectAll<SVGGElement, Company>("g.pin")
-      .select(".pin-label")
-      .style("opacity", (d) => (selected.includes(d.t) ? 1 : 0));
+      .style("opacity", (d) => (selected.includes(d.t) ? 1 : 0))
+      .style("stroke", (d) => {
+        const idx = selected.indexOf(d.t);
+        return idx >= 0 ? COMPARE_COLORS[idx % COMPARE_COLORS.length] : "#4FD1C5";
+      });
   }, [selected]);
+
+  function zoomBy(factor: number) {
+    if (!svgRef.current || !zoomBehaviorRef.current) return;
+    d3.select(svgRef.current).transition().duration(250).call(zoomBehaviorRef.current.scaleBy, factor);
+  }
+  function resetZoom() {
+    if (!svgRef.current || !zoomBehaviorRef.current) return;
+    d3.select(svgRef.current)
+      .transition()
+      .duration(300)
+      .call(zoomBehaviorRef.current.transform, d3.zoomIdentity);
+  }
 
   return (
     <div className="relative">
       <div className="w-full overflow-hidden rounded-[2px] bg-[#0D1119] border border-border-soft">
-        <svg ref={svgRef} className="w-full h-auto block" />
+        <svg ref={svgRef} className="w-full h-auto block touch-none" />
       </div>
+
+      <div className="absolute top-2.5 right-2.5 flex flex-col gap-1">
+        <button
+          onClick={() => zoomBy(1.6)}
+          aria-label="Zoom in"
+          className="w-7 h-7 flex items-center justify-center bg-[#0D1119]/90 border border-border-soft rounded-[3px] text-text-dim hover:text-text hover:border-text-faint font-mono text-[14px] transition-colors"
+        >
+          +
+        </button>
+        <button
+          onClick={() => zoomBy(1 / 1.6)}
+          aria-label="Zoom out"
+          className="w-7 h-7 flex items-center justify-center bg-[#0D1119]/90 border border-border-soft rounded-[3px] text-text-dim hover:text-text hover:border-text-faint font-mono text-[14px] transition-colors"
+        >
+          −
+        </button>
+        <button
+          onClick={resetZoom}
+          aria-label="Reset zoom"
+          className="w-7 h-7 flex items-center justify-center bg-[#0D1119]/90 border border-border-soft rounded-[3px] text-text-dim hover:text-text hover:border-text-faint font-mono text-[10px] transition-colors"
+        >
+          ⟲
+        </button>
+      </div>
+
+      <div className="absolute bottom-2.5 left-2.5 font-mono text-[10px] text-text-faint bg-[#0D1119]/90 border border-border-soft rounded-[3px] px-2 py-1">
+        {zoomLevel > 1.05
+          ? `Zoomed ${zoomLevel.toFixed(1)}×`
+          : "Scroll or pinch to zoom in on dense regions"}
+      </div>
+
       <div
         ref={tooltipRef}
         className="fixed pointer-events-none bg-[#050608] border border-border text-text font-mono text-[11.5px] px-2.5 py-2 rounded-[3px] z-50 opacity-0 transition-opacity duration-100 max-w-[230px] leading-relaxed"

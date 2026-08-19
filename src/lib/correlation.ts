@@ -1,4 +1,4 @@
-import { Company, regionOf } from "./companies";
+import { Company, Sector, regionOf } from "./companies";
 
 /**
  * Deterministic hash + PRNG so the "random" correlation noise is stable
@@ -72,4 +72,36 @@ export function correlationStats(companies: Company[], matrix: number[][]): Corr
   }
 
   return { avg: sum / count, maxPair, maxValue: max, minPair, minValue: min };
+}
+
+/**
+ * Averages pairwise company correlation up to the sector level, giving a
+ * fixed-size (sector-count × sector-count) matrix no matter how many
+ * companies are in the dataset — this is what keeps the default heatmap
+ * view readable at 200 companies as well as at 14.
+ */
+export function buildSectorMatrix(companies: Company[]): { sectors: Sector[]; matrix: number[][] } {
+  const sectors = Array.from(new Set(companies.map((c) => c.sector))) as Sector[];
+  const bySector: Record<string, Company[]> = {};
+  sectors.forEach((s) => (bySector[s] = companies.filter((c) => c.sector === s)));
+
+  const matrix = sectors.map((sa) =>
+    sectors.map((sb) => {
+      const groupA = bySector[sa];
+      const groupB = bySector[sb];
+      let sum = 0;
+      let count = 0;
+      groupA.forEach((a) => {
+        groupB.forEach((b) => {
+          if (a.t === b.t) return;
+          sum += correlation(a, b);
+          count++;
+        });
+      });
+      if (count === 0) return 1; // single-company sector vs itself
+      return Math.round((sum / count) * 100) / 100;
+    })
+  );
+
+  return { sectors, matrix };
 }

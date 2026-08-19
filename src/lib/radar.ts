@@ -16,6 +16,10 @@ const sectorBaseline: Record<Sector, number[]> = {
   Energy: [72, 35, 62, 60, 85, 55],
   Healthcare: [70, 50, 60, 62, 68, 48],
   Consumer: [68, 40, 65, 66, 60, 45],
+  Industrials: [60, 42, 55, 52, 58, 50],
+  Telecom: [58, 30, 60, 45, 70, 35],
+  Retail: [55, 55, 50, 58, 55, 60],
+  Materials: [62, 38, 55, 50, 66, 42],
 };
 
 function hashStr(s: string): number {
