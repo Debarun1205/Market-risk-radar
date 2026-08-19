@@ -47,7 +47,10 @@ async function callGroq(prompt: string, apiKey: string): Promise<string> {
       temperature: 0.6,
     }),
   });
-  if (!res.ok) throw new Error(`Groq responded ${res.status}`);
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Groq responded ${res.status}: ${errText}`);
+  }
   const data = await res.json();
   const text = data?.choices?.[0]?.message?.content;
   if (!text) throw new Error("Groq response missing content");
@@ -65,7 +68,10 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
       }),
     }
   );
-  if (!res.ok) throw new Error(`Gemini responded ${res.status}`);
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gemini responded ${res.status}: ${errText}`);
+  }
   const data = await res.json();
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error("Gemini response missing content");
@@ -97,8 +103,8 @@ export async function getAnalysis(
     try {
       const text = await callGroq(prompt, groqKey);
       return { mode: "live", text };
-    } catch {
-      // fall through to next provider / fallback
+    } catch (err) {
+      console.error("Groq call failed:", err);
     }
   }
 
@@ -106,8 +112,8 @@ export async function getAnalysis(
     try {
       const text = await callGemini(prompt, geminiKey);
       return { mode: "live", text };
-    } catch {
-      // fall through to fallback
+    } catch (err) {
+      console.error("Gemini call failed:", err);
     }
   }
 
