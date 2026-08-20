@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { companies, Company } from "@/lib/companies";
+import { flagFor } from "@/lib/flags";
 
 interface Props {
   selected: string[];
@@ -60,7 +61,7 @@ export default function CompanySearch({ selected, onAdd, maxReached }: Props) {
                 <span className="text-[12px] text-text-dim truncate">{c.name}</span>
               </span>
               <span className="font-mono text-[10.5px] text-text-faint flex-shrink-0">
-                {c.country}
+                {flagFor(c.country)} {c.country}
               </span>
             </button>
           ))}

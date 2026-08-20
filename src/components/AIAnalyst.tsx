@@ -56,7 +56,7 @@ export default function AIAnalyst({ selected }: Props) {
       <div className="flex justify-between items-center gap-3 flex-wrap mb-4">
         <div>
           <p className="font-mono text-[11px] tracking-wider uppercase text-text-dim flex items-center gap-2">
-            <span className="text-amber">04</span> AI Analyst
+            <span className="text-amber">06</span> AI Analyst
           </p>
           <p className="font-mono text-[15px] font-semibold mt-0.5">
             Narrative insight, generated from the data above

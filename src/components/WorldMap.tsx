@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import * as topojson from "topojson-client";
 import { companies, sectorColor, COMPARE_COLORS, Company } from "@/lib/companies";
+import { flagFor } from "@/lib/flags";
 
 interface Props {
   selected: string[];
@@ -132,7 +133,7 @@ export default function WorldMap({ selected, onToggle, onHover }: Props) {
         .on("mousemove", (event: MouseEvent, d) => {
           const tooltip = tooltipRef.current;
           if (tooltip) {
-            tooltip.innerHTML = `<b class="text-amber">${d.t}</b> · ${d.name}<br/>${d.country} · ${d.sector}<br/>Market cap: $${d.cap}B`;
+            tooltip.innerHTML = `<b class="text-amber">${d.t}</b> · ${d.name}<br/>${flagFor(d.country)} ${d.country} · ${d.sector}<br/>Market cap: $${d.cap}B`;
             tooltip.style.left = `${event.clientX + 14}px`;
             tooltip.style.top = `${event.clientY + 14}px`;
             tooltip.style.opacity = "1";

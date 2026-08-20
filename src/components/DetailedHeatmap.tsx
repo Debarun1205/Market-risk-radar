@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { byTicker, Company } from "@/lib/companies";
 import { correlation } from "@/lib/correlation";
+import { flagFor } from "@/lib/flags";
 
 interface Props {
   selected: string[];
@@ -94,12 +95,14 @@ export default function DetailedHeatmap({ selected }: Props) {
           {hoverPair.row === hoverPair.col ? (
             <>
               <b className="text-amber">{hoverPair.row}</b> · {byTicker[hoverPair.row].name} ·{" "}
-              {byTicker[hoverPair.row].country}
+              {flagFor(byTicker[hoverPair.row].country)} {byTicker[hoverPair.row].country}
             </>
           ) : (
             <>
-              <b className="text-amber">{hoverPair.row}</b> ({byTicker[hoverPair.row].country}) vs{" "}
-              <b className="text-amber">{hoverPair.col}</b> ({byTicker[hoverPair.col].country})
+              <b className="text-amber">{hoverPair.row}</b> ({flagFor(byTicker[hoverPair.row].country)}{" "}
+              {byTicker[hoverPair.row].country}) vs{" "}
+              <b className="text-amber">{hoverPair.col}</b> ({flagFor(byTicker[hoverPair.col].country)}{" "}
+              {byTicker[hoverPair.col].country})
               <br />
               corr: {correlation(byTicker[hoverPair.row], byTicker[hoverPair.col]).toFixed(2)}
             </>
