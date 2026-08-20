@@ -7,6 +7,8 @@ export interface NewsArticle {
   publishedAt: string;
   tickers: string[];
   sentiment: "positive" | "negative" | "neutral";
+  imageUrl?: string;
+  description?: string;
 }
 
 export interface NewsResult {
@@ -23,12 +25,32 @@ export interface NewsResult {
  */
 function demoArticles(tickers: string[]): NewsArticle[] {
   const pool = tickers.length ? tickers : ["AAPL", "JPM", "TSLA", "NVO"];
-  const templates: Array<(name: string) => { title: string; sentiment: NewsArticle["sentiment"] }> = [
-    (n) => ({ title: `Analysts weigh in ahead of ${n}'s next earnings report`, sentiment: "neutral" }),
-    (n) => ({ title: `${n} shares move on broader sector trends`, sentiment: "neutral" }),
-    (n) => ({ title: `What recent guidance means for ${n} investors`, sentiment: "positive" }),
-    (n) => ({ title: `${n} faces questions on margins amid sector headwinds`, sentiment: "negative" }),
-    (n) => ({ title: `A quick primer on ${n}'s current market position`, sentiment: "neutral" }),
+  const templates: Array<(name: string) => { title: string; description: string; sentiment: NewsArticle["sentiment"] }> = [
+    (n) => ({
+      title: `Analysts weigh in ahead of ${n}'s next earnings report`,
+      description: `A look at what the market is expecting from ${n} heading into its next quarterly update, and which numbers investors are watching most closely.`,
+      sentiment: "neutral",
+    }),
+    (n) => ({
+      title: `${n} shares move on broader sector trends`,
+      description: `Sector-wide movement has been shaping how ${n} trades this week, more than any single company-specific announcement.`,
+      sentiment: "neutral",
+    }),
+    (n) => ({
+      title: `What recent guidance means for ${n} investors`,
+      description: `Recent commentary from company leadership has shifted how analysts are framing ${n}'s outlook for the coming quarters.`,
+      sentiment: "positive",
+    }),
+    (n) => ({
+      title: `${n} faces questions on margins amid sector headwinds`,
+      description: `Rising costs across the industry have put pressure on margins, and ${n} is no exception according to recent coverage.`,
+      sentiment: "negative",
+    }),
+    (n) => ({
+      title: `A quick primer on ${n}'s current market position`,
+      description: `A brief overview of where ${n} stands relative to peers right now, for anyone getting up to speed.`,
+      sentiment: "neutral",
+    }),
   ];
 
   return pool.slice(0, 6).map((t, i) => {
@@ -37,6 +59,7 @@ function demoArticles(tickers: string[]): NewsArticle[] {
     const template = templates[i % templates.length](name);
     return {
       title: template.title,
+      description: template.description,
       url: "#",
       source: "Sample source",
       publishedAt: new Date(Date.now() - i * 3 * 60 * 60 * 1000).toISOString(),
@@ -80,11 +103,13 @@ async function fetchMarketaux(tickers: string[], apiKey: string): Promise<NewsAr
 
     return {
       title: item.title as string,
+      description: (item.description || item.snippet) as string | undefined,
       url: item.url as string,
       source: (item.source as string) ?? "Unknown source",
       publishedAt: (item.published_at as string) ?? new Date().toISOString(),
       tickers: matchedTickers.length ? matchedTickers : tickers.slice(0, 1),
       sentiment: sentimentFromScore(avgSentiment),
+      imageUrl: item.image_url as string | undefined,
     };
   });
 }

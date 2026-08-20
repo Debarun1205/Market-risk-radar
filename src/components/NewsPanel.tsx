@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { byTicker } from "@/lib/companies";
+import { byTicker, sectorColor } from "@/lib/companies";
 import { flagFor } from "@/lib/flags";
 import { NewsArticle } from "@/lib/news";
 
@@ -26,6 +26,62 @@ function sentimentDot(s: NewsArticle["sentiment"]) {
   const color = s === "positive" ? "bg-green" : s === "negative" ? "bg-rose" : "bg-text-faint";
   const label = s === "positive" ? "Positive tone" : s === "negative" ? "Negative tone" : "Neutral tone";
   return <span className={`w-1.5 h-1.5 rounded-full ${color} flex-shrink-0`} title={label} />;
+}
+
+/** Stylized stand-in for a photo — used whenever an article has no real image,
+ *  which is always true in Demo mode. Never dresses up a fabricated headline
+ *  as a real photograph. */
+function ArtCard({ article, className }: { article: NewsArticle; className: string }) {
+  const company = byTicker[article.tickers[0]];
+  const color = company ? sectorColor[company.sector] : "#4FD1C5";
+
+  if (article.imageUrl) {
+    return (
+      <img
+        src={article.imageUrl}
+        alt=""
+        className={`${className} object-cover`}
+        onError={(e) => {
+          (e.currentTarget as HTMLImageElement).style.display = "none";
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${className} flex items-center justify-center relative overflow-hidden`}
+      style={{ background: `linear-gradient(135deg, ${color}40 0%, #10141C 75%)` }}
+    >
+      <span
+        className="font-mono font-bold select-none"
+        style={{ color: `${color}55`, fontSize: "clamp(28px, 15%, 64px)" }}
+      >
+        {article.tickers[0]}
+      </span>
+      <div
+        className="absolute inset-0"
+        style={{ background: `radial-gradient(circle at 30% 20%, ${color}25, transparent 60%)` }}
+      />
+    </div>
+  );
+}
+
+function MetaRow({ article, mode }: { article: NewsArticle; mode: "demo" | "live" | "live-fallback" }) {
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {mode !== "live" && (
+        <span className="font-mono text-[9px] uppercase tracking-wider text-amber border border-amber/40 rounded-[2px] px-1.5 py-0.5">
+          Demo
+        </span>
+      )}
+      {article.tickers.map((t: string) => (
+        <span key={t} className="font-mono text-[10px] text-text-dim">
+          {flagFor(byTicker[t]?.country ?? "")} {t}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 export default function NewsPanel({ tickers }: Props) {
@@ -86,10 +142,13 @@ export default function NewsPanel({ tickers }: Props) {
       </div>
 
       {result.status === "loading" ? (
-        <div className="flex flex-col gap-2">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-14 rounded-[3px] bg-[linear-gradient(90deg,var(--border)_25%,var(--border-soft)_50%,var(--border)_75%)] bg-[length:200%_100%] animate-[shimmer_1.1s_linear_infinite]" />
-          ))}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 h-64 rounded-[4px] bg-[linear-gradient(90deg,var(--border)_25%,var(--border-soft)_50%,var(--border)_75%)] bg-[length:200%_100%] animate-[shimmer_1.1s_linear_infinite]" />
+          <div className="flex flex-col gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 rounded-[3px] bg-[linear-gradient(90deg,var(--border)_25%,var(--border-soft)_50%,var(--border)_75%)] bg-[length:200%_100%] animate-[shimmer_1.1s_linear_infinite]" />
+            ))}
+          </div>
         </div>
       ) : (
         <>
@@ -99,49 +158,85 @@ export default function NewsPanel({ tickers }: Props) {
               {result.note}
             </div>
           )}
-          <div className="flex flex-col gap-2">
-            {result.articles.length === 0 ? (
-              <p className="font-mono text-[11.5px] text-text-faint py-4">No headlines available right now.</p>
-            ) : (
-              result.articles.map((a, i) => {
-                const company = byTicker[a.tickers[0]];
+
+          {result.articles.length === 0 ? (
+            <p className="font-mono text-[11.5px] text-text-faint py-4">No headlines available right now.</p>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Featured story */}
+              {(() => {
+                const a = result.articles[0];
                 return (
                   <a
-                    key={i}
                     href={a.url}
                     target={a.url === "#" ? undefined : "_blank"}
                     rel="noopener noreferrer"
-                    className={`flex items-start gap-3 bg-panel-alt border border-border rounded-[3px] px-3.5 py-3 transition-colors ${
-                      a.url === "#" ? "cursor-default" : "hover:border-text-faint"
-                    }`}
                     onClick={(e) => {
                       if (a.url === "#") e.preventDefault();
                     }}
+                    className="lg:col-span-2 group block bg-panel-alt border border-border rounded-[4px] overflow-hidden hover:border-text-faint transition-colors"
                   >
-                    <span className="mt-1.5">{sentimentDot(a.sentiment)}</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                        {result.mode !== "live" && (
-                          <span className="font-mono text-[9px] uppercase tracking-wider text-amber border border-amber/40 rounded-[2px] px-1.5 py-0.5">
-                            Demo
-                          </span>
-                        )}
-                        {a.tickers.map((t) => (
-                          <span key={t} className="font-mono text-[10px] text-text-dim">
-                            {company && flagFor(byTicker[t]?.country ?? "")} {t}
-                          </span>
-                        ))}
+                    <div className="overflow-hidden">
+                      <ArtCard
+                        article={a}
+                        className="w-full h-56 transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <div className="mb-2">
+                        <MetaRow article={a} mode={result.mode} />
                       </div>
-                      <div className="text-[13px] text-text leading-snug">{a.title}</div>
-                      <div className="font-mono text-[10.5px] text-text-faint mt-1">
+                      <div className="flex items-start gap-2">
+                        <span className="mt-2">{sentimentDot(a.sentiment)}</span>
+                        <h3 className="text-[18px] leading-snug text-text font-semibold">{a.title}</h3>
+                      </div>
+                      {a.description && (
+                        <p className="text-[13px] text-text-dim leading-relaxed mt-2">{a.description}</p>
+                      )}
+                      <div className="font-mono text-[10.5px] text-text-faint mt-3">
                         {a.source} · {timeAgo(a.publishedAt)}
                       </div>
                     </div>
                   </a>
                 );
-              })
-            )}
-          </div>
+              })()}
+
+              {/* Secondary stories */}
+              <div className="flex flex-col gap-3">
+                {result.articles.slice(1, 6).map((a, i) => (
+                  <a
+                    key={i}
+                    href={a.url}
+                    target={a.url === "#" ? undefined : "_blank"}
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      if (a.url === "#") e.preventDefault();
+                    }}
+                    className="group flex items-start gap-3 bg-panel-alt border border-border rounded-[3px] p-2.5 hover:border-text-faint transition-colors"
+                  >
+                    <div className="overflow-hidden rounded-[2px] flex-shrink-0">
+                      <ArtCard
+                        article={a}
+                        className="w-16 h-16 transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="mb-1">
+                        <MetaRow article={a} mode={result.mode} />
+                      </div>
+                      <div className="flex items-start gap-1.5">
+                        <span className="mt-1.5">{sentimentDot(a.sentiment)}</span>
+                        <p className="text-[12.5px] text-text leading-snug line-clamp-2">{a.title}</p>
+                      </div>
+                      <div className="font-mono text-[10px] text-text-faint mt-1">
+                        {a.source} · {timeAgo(a.publishedAt)}
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

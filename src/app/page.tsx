@@ -14,6 +14,7 @@ import AIAnalyst from "@/components/AIAnalyst";
 import GlossaryTooltip from "@/components/GlossaryTooltip";
 import GlossaryPanel from "@/components/GlossaryPanel";
 import OnboardingTour from "@/components/OnboardingTour";
+import ChatWidget from "@/components/ChatWidget";
 import { sectorColor, companies, DEFAULT_SELECTION, MAX_SELECTION } from "@/lib/companies";
 
 const TOUR_SEEN_KEY = "mrr_tour_seen";
@@ -262,6 +263,7 @@ export default function Page() {
       </main>
 
       <GlossaryPanel open={glossaryOpen} onClose={() => setGlossaryOpen(false)} />
+      <ChatWidget selected={selected} setSelected={setSelected} setGlossaryOpen={setGlossaryOpen} />
       <OnboardingTour
         active={tourActive}
         step={tourStep}
