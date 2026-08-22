@@ -85,7 +85,7 @@ function MetaRow({ article, mode }: { article: NewsArticle; mode: "demo" | "live
 }
 
 export default function NewsPanel({ tickers }: Props) {
-  const [mode, setMode] = useState<Mode>("demo");
+  const [mode, setMode] = useState<Mode>("live");
   const [result, setResult] = useState<ResultState>({ status: "loading" });
 
   const effectiveTickers = tickers.length ? tickers : ["AAPL", "JPM", "TSLA", "NVO"];

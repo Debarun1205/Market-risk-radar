@@ -31,7 +31,7 @@ const GREETING: ChatMsg = {
 export default function ChatWidget({ selected, setSelected, setGlossaryOpen }: Props) {
   const [open, setOpen] = useState(false);
   const [uiMode, setUiMode] = useState<"beginner" | "expert">("beginner");
-  const [chatMode, setChatMode] = useState<"demo" | "live">("demo");
+  const [chatMode, setChatMode] = useState<"demo" | "live">("live");
   const [messages, setMessages] = useState<ChatMsg[]>([GREETING]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);

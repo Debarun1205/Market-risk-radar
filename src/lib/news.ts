@@ -23,7 +23,7 @@ export interface NewsResult {
  * real headline. Every card built from this also carries a "Demo" tag in
  * the UI itself, not just here.
  */
-function demoArticles(tickers: string[]): NewsArticle[] {
+export function demoArticles(tickers: string[]): NewsArticle[] {
   const pool = tickers.length ? tickers : ["AAPL", "JPM", "TSLA", "NVO"];
   const templates: Array<(name: string) => { title: string; description: string; sentiment: NewsArticle["sentiment"] }> = [
     (n) => ({

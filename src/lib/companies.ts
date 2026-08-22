@@ -334,6 +334,8 @@ export function regionOf(country: string): Region {
   return REGION_BY_COUNTRY[country] ?? "Europe";
 }
 
+export { REGION_BY_COUNTRY };
+
 // Colors assigned by selection order (not sector), so companies picked for
 // comparison stay visually distinct from each other even when several
 // share the same sector.

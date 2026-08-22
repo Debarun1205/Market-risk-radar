@@ -29,7 +29,8 @@ export function correlation(a: Company, b: Company): number {
   if (a.sector === b.sector) base = 0.55;
   else if (regionOf(a.country) === regionOf(b.country)) base = 0.22;
 
-  const rng = mulberry32(hashStr(`${a.t}-${b.t}`));
+  const pairKey = [a.t, b.t].sort().join("-");
+  const rng = mulberry32(hashStr(pairKey));
   const noise = (rng() - 0.5) * 0.3; // ±0.15
   const v = Math.max(-0.3, Math.min(0.95, base + noise));
   return Math.round(v * 100) / 100;
