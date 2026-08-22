@@ -13,6 +13,7 @@ import NewsPanel from "@/components/NewsPanel";
 import AIAnalyst from "@/components/AIAnalyst";
 import GlossaryTooltip from "@/components/GlossaryTooltip";
 import GlossaryPanel from "@/components/GlossaryPanel";
+import AboutPanel from "@/components/AboutPanel";
 import OnboardingTour from "@/components/OnboardingTour";
 import ChatWidget from "@/components/ChatWidget";
 import { sectorColor, companies, DEFAULT_SELECTION, MAX_SELECTION } from "@/lib/companies";
@@ -23,6 +24,7 @@ export default function Page() {
   const [selected, setSelected] = useState<string[]>(DEFAULT_SELECTION);
   const [hovered, setHovered] = useState<string | null>(null);
   const [glossaryOpen, setGlossaryOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [tourActive, setTourActive] = useState(false);
   const [tourStep, setTourStep] = useState(0);
 
@@ -90,6 +92,12 @@ export default function Page() {
             className="font-mono text-[11px] tracking-wide uppercase border border-border rounded-[2px] px-2.5 py-1.5 text-text-dim hover:text-text hover:border-cyan transition-colors"
           >
             Learn
+          </button>
+          <button
+            onClick={() => setAboutOpen(true)}
+            className="font-mono text-[11px] tracking-wide uppercase border border-border rounded-[2px] px-2.5 py-1.5 text-text-dim hover:text-text hover:border-amber transition-colors"
+          >
+            About
           </button>
         </div>
       </header>
@@ -257,12 +265,19 @@ export default function Page() {
         </section>
 
         <footer className="max-w-[1180px] mx-auto mt-9 pt-4 border-t border-border-soft font-mono text-[10.5px] text-text-faint flex justify-between flex-wrap gap-2">
-          <span>Data: real companies, synthetic financials — generated for prototype purposes</span>
+          <span>
+            Built by{" "}
+            <button onClick={() => setAboutOpen(true)} className="text-cyan hover:underline">
+              Debarun Banerjee
+            </button>{" "}
+            · Data: real companies, synthetic financials — for prototype purposes
+          </span>
           <span>Free-tier LLM & news ready · fallback-safe by design</span>
         </footer>
       </main>
 
       <GlossaryPanel open={glossaryOpen} onClose={() => setGlossaryOpen(false)} />
+      <AboutPanel open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <ChatWidget selected={selected} setSelected={setSelected} setGlossaryOpen={setGlossaryOpen} />
       <OnboardingTour
         active={tourActive}
